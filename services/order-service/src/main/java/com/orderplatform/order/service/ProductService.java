@@ -42,6 +42,7 @@ public class ProductService {
 
     public ProductResponse findById(UUID id) {
         return productRepository.findById(id)
+                .filter(Product::getActive)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
     }

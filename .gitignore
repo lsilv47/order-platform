@@ -30,3 +30,12 @@ frontend/.angular/
 # ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Git worktrees ─────────────────────────────────────────────────────────────
+.worktrees/
+
+# ── Superpowers SDD workspace ─────────────────────────────────────────────────
+.superpowers/
+
+# ── Nested duplicate (artifact from scaffolding) ─────────────────────────────
+order-platform/

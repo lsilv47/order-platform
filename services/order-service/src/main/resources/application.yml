@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    # Em dev: conecta no PostgreSQL local (porta 5432)
+    # Docker Compose sobrescreve com: jdbc:postgresql://postgres-order:5432/order_db
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/order_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway gerencia o schema; Hibernate só valida
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+server:
+  port: 8081
+
+# Actuator: expõe /actuator/health e /actuator/info publicamente
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# JWT: o secret vem de variável de ambiente (nunca em código)
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-change-in-production-must-be-256-bits-long!!}
+    expiration-ms: 86400000   # 24h
+  admin:
+    email: admin@demo.com
+    password: ${ADMIN_PASSWORD:demo123}
+
+logging:
+  level:
+    com.orderplatform: DEBUG
+    org.springframework.amqp: INFO
+  pattern:
+    console: "%d{HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

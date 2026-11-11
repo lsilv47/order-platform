@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: notification-service
+
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}  # MailHog em dev
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  mail:
+    from: ${MAIL_FROM:noreply@orderplatform.local}
+
+logging:
+  level:
+    com.orderplatform: DEBUG
+    org.springframework.amqp: INFO
+  pattern:
+    console: "%d{HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"

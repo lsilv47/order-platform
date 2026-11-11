@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Herda do Spring Boot: versões gerenciadas de todas as libs do ecossistema -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.orderplatform</groupId>
+    <artifactId>order-platform</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging> <!-- pom = projeto pai, não gera .jar -->
+    <name>Order Platform</name>
+
+    <!-- Lista de módulos: cada serviço é um módulo Maven -->
+    <modules>
+        <module>services/order-service</module>
+        <module>services/payment-service</module>
+        <module>services/notification-service</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- Versões centralizadas aqui — serviços herdam sem repetir -->
+        <springdoc.version>2.3.0</springdoc.version>
+        <jjwt.version>0.12.3</jjwt.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
+    </properties>
+
+    <!-- dependencyManagement: define versões, mas NÃO adiciona dependências.
+         Cada serviço declara o que precisa; a versão vem daqui. -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

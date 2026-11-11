@@ -1,0 +1,20 @@
+<div class="dashboard">
+  @if (vm$ | async; as vm) {
+    <div class="tiles">
+      @for (tile of vm.tiles; track tile.status) {
+        <mat-card class="tile">
+          <mat-card-content>
+            <div class="tile-count">{{ tile.count }}</div>
+            <div class="tile-label">{{ tile.label }}</div>
+          </mat-card-content>
+        </mat-card>
+      }
+      <mat-card class="tile revenue">
+        <mat-card-content>
+          <div class="tile-count">{{ formatAmount(vm.revenue) }}</div>
+          <div class="tile-label">Receita (pagos)</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

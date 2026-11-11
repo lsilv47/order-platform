@@ -1,5 +1,6 @@
 package com.orderplatform.order.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
@@ -12,15 +13,19 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -38,10 +43,13 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {
                     response.setContentType("application/json");
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    String correlationId = MDC.get("correlationId");
-                    response.getWriter().write("{\"timestamp\":\"" + Instant.now() +
-                            "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"" + ex.getMessage() +
-                            "\",\"correlationId\":\"" + (correlationId != null ? correlationId : "") + "\"}");
+                    Map<String, Object> body = new LinkedHashMap<>();
+                    body.put("timestamp", Instant.now().toString());
+                    body.put("status", 401);
+                    body.put("error", "Unauthorized");
+                    body.put("message", ex.getMessage());
+                    body.put("correlationId", MDC.get("correlationId"));
+                    response.getWriter().write(objectMapper.writeValueAsString(body));
                 }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

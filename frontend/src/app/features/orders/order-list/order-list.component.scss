@@ -1,0 +1,51 @@
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.orders-table {
+  width: 100%;
+}
+
+.order-row {
+  cursor: pointer;
+}
+
+.order-row:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.status-chip {
+  color: #fff;
+}
+
+.status-paid {
+  background-color: #2e7d32;
+}
+
+.status-payment_failed {
+  background-color: #c62828;
+}
+
+.status-pending {
+  background-color: #f9a825;
+  color: #000;
+}
+
+.status-cancelled {
+  background-color: #757575;
+}

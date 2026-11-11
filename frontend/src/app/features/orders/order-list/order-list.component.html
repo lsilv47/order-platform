@@ -1,0 +1,73 @@
+<div class="order-list">
+  <div class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select [formControl]="statusControl">
+        <mat-option value="">Todos</mat-option>
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>E-mail do cliente</mat-label>
+      <input matInput [formControl]="emailControl" placeholder="cliente@exemplo.com" />
+    </mat-form-field>
+  </div>
+
+  @if (orders$ | async; as page) {
+    @if (page.content.length > 0) {
+      <table mat-table [dataSource]="page.content" class="orders-table">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let order">{{ order.id.slice(0, 8) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="customerEmail">
+          <th mat-header-cell *matHeaderCellDef>Cliente</th>
+          <td mat-cell *matCellDef="let order">{{ order.customerEmail }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalAmount">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let order">{{ formatAmount(order.totalAmount) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let order">
+            <mat-chip-set>
+              <mat-chip [class]="'status-chip status-' + order.status.toLowerCase()" [disableRipple]="true">
+                {{ order.status }}
+              </mat-chip>
+            </mat-chip-set>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Criado em</th>
+          <td mat-cell *matCellDef="let order">{{ order.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let order; columns: displayedColumns"
+          class="order-row"
+          (click)="onRowClick(order)"
+        ></tr>
+      </table>
+
+      <mat-paginator
+        [length]="page.totalElements"
+        [pageSize]="pageSize"
+        [pageIndex]="page.number"
+        [hidePageSize]="true"
+        (page)="onPage($event)"
+      ></mat-paginator>
+    } @else {
+      <p class="empty-state">Nenhum pedido encontrado</p>
+    }
+  }
+</div>

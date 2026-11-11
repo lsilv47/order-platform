@@ -14,6 +14,10 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByStatusAndCustomerEmailContainingIgnoreCase(OrderStatus status, String customerEmail, Pageable pageable);
 
+    Page<Order> findAllByStatus(OrderStatus status, Pageable pageable);
+
+    Page<Order> findAllByCustomerEmailContainingIgnoreCase(String customerEmail, Pageable pageable);
+
     @Query("SELECT o FROM Order o JOIN FETCH o.items WHERE o.id = :id")
     Optional<Order> findByIdWithItems(@Param("id") UUID id);
 }

@@ -27,8 +27,8 @@ public class PaymentResultConsumer {
     @RabbitHandler
     public void handlePaymentApproved(PaymentApprovedEvent event, Message message) {
         String correlationId = message.getMessageProperties().getCorrelationId();
-        MDC.put("correlationId", correlationId != null ? correlationId : "");
         try {
+            MDC.put("correlationId", correlationId != null ? correlationId : "");
             log.info("Payment approved for order {}", event.orderId());
             orderService.transitionTo(event.orderId(), OrderStatus.PAID);
         } finally {
@@ -39,8 +39,8 @@ public class PaymentResultConsumer {
     @RabbitHandler
     public void handlePaymentFailed(PaymentFailedEvent event, Message message) {
         String correlationId = message.getMessageProperties().getCorrelationId();
-        MDC.put("correlationId", correlationId != null ? correlationId : "");
         try {
+            MDC.put("correlationId", correlationId != null ? correlationId : "");
             log.info("Payment failed for order {}: {}", event.orderId(), event.reason());
             orderService.transitionTo(event.orderId(), OrderStatus.PAYMENT_FAILED);
         } finally {

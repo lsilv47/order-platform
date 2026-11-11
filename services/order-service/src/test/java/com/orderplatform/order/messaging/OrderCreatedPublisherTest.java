@@ -2,6 +2,7 @@ package com.orderplatform.order.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderplatform.order.AbstractIntegrationTest;
+import com.orderplatform.order.config.TestRabbitConfig;
 import com.orderplatform.order.domain.Order;
 import com.orderplatform.order.domain.OrderItem;
 import com.orderplatform.order.domain.OrderStatus;
@@ -12,6 +13,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -22,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
+@Import(TestRabbitConfig.class)
 class OrderCreatedPublisherTest extends AbstractIntegrationTest {
 
     @Autowired RabbitTemplate rabbitTemplate;

@@ -12,9 +12,10 @@ import com.orderplatform.order.dto.response.OrderSummaryResponse;
 import com.orderplatform.order.exception.InsufficientStockException;
 import com.orderplatform.order.exception.InvalidOrderStateException;
 import com.orderplatform.order.exception.ResourceNotFoundException;
-import com.orderplatform.order.messaging.publisher.OrderEventPublisher;
+import com.orderplatform.order.messaging.event.OrderCreatedApplicationEvent;
 import com.orderplatform.order.repository.OrderRepository;
 import com.orderplatform.order.repository.ProductRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,13 +32,13 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final OrderEventPublisher orderEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-                        OrderEventPublisher orderEventPublisher) {
+                        ApplicationEventPublisher applicationEventPublisher) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
-        this.orderEventPublisher = orderEventPublisher;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional
@@ -50,8 +52,13 @@ public class OrderService {
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
 
+        // Sort by productId to avoid deadlock on concurrent orders with overlapping items
+        List<OrderItemRequest> sortedItems = req.items().stream()
+                .sorted(Comparator.comparing(OrderItemRequest::productId))
+                .toList();
+
         BigDecimal total = BigDecimal.ZERO;
-        for (OrderItemRequest itemReq : req.items()) {
+        for (OrderItemRequest itemReq : sortedItems) {
             Product product = productRepository.findByIdForUpdate(itemReq.productId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + itemReq.productId()));
 
@@ -79,7 +86,8 @@ public class OrderService {
 
         order.setTotalAmount(total);
         Order saved = orderRepository.save(order);
-        orderEventPublisher.publishOrderCreated(saved, order.getCorrelationId());
+        // Publish after commit to avoid sending event for a rolled-back order
+        applicationEventPublisher.publishEvent(new OrderCreatedApplicationEvent(saved, order.getCorrelationId()));
         return toResponse(saved);
     }
 
@@ -107,7 +115,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse cancel(UUID id) {
-        Order order = orderRepository.findByIdWithItems(id)
+        Order order = orderRepository.findByIdWithItemsForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new InvalidOrderStateException(order.getStatus().name(), "CANCELLED");
@@ -120,9 +128,13 @@ public class OrderService {
 
     @Transactional
     public void transitionTo(UUID orderId, OrderStatus newStatus) {
-        Order order = orderRepository.findByIdWithItems(orderId)
+        Order order = orderRepository.findByIdWithItemsForUpdate(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
         OrderStatus current = order.getStatus();
+        // Idempotent: already in target state
+        if (current == newStatus) {
+            return;
+        }
         boolean valid = current == OrderStatus.PENDING &&
                 (newStatus == OrderStatus.PAID || newStatus == OrderStatus.PAYMENT_FAILED);
         if (!valid) {

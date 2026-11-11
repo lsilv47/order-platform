@@ -1,5 +1,7 @@
 package com.orderplatform.order.config;
 
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -8,6 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.time.Instant;
 
 @Configuration
 @EnableWebSecurity
@@ -31,6 +35,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    String correlationId = MDC.get("correlationId");
+                    response.getWriter().write("{\"timestamp\":\"" + Instant.now() +
+                            "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"" + ex.getMessage() +
+                            "\",\"correlationId\":\"" + (correlationId != null ? correlationId : "") + "\"}");
+                }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

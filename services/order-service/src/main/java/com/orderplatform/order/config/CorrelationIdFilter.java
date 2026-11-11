@@ -22,8 +22,16 @@ public class CorrelationIdFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
-        String correlationId = req.getHeader("X-Correlation-Id");
-        if (correlationId == null || correlationId.isBlank()) {
+        String incomingId = req.getHeader("X-Correlation-Id");
+        String correlationId;
+        try {
+            if (incomingId != null && !incomingId.isBlank()) {
+                UUID.fromString(incomingId); // validates format; truncation attack prevention
+                correlationId = incomingId;
+            } else {
+                correlationId = UUID.randomUUID().toString();
+            }
+        } catch (IllegalArgumentException e) {
             correlationId = UUID.randomUUID().toString();
         }
         MDC.put("correlationId", correlationId);

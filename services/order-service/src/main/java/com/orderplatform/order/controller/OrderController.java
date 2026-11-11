@@ -6,6 +6,7 @@ import com.orderplatform.order.dto.response.OrderResponse;
 import com.orderplatform.order.dto.response.OrderSummaryResponse;
 import com.orderplatform.order.service.OrderService;
 import jakarta.validation.Valid;
+import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +25,8 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderResponse> create(
-            @Valid @RequestBody CreateOrderRequest req,
-            @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId) {
+    public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest req) {
+        String correlationId = MDC.get("correlationId");
         return ResponseEntity.status(201).body(orderService.create(req, correlationId));
     }
 

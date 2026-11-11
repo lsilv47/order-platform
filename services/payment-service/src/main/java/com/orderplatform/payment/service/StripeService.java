@@ -31,6 +31,8 @@ public class StripeService {
 
     @Retryable(
             retryFor = StripeException.class,
+            noRetryFor = com.stripe.exception.CardException.class,
+            exceptionExpression = "#root instanceof T(com.stripe.exception.StripeException) and #root.statusCode >= 500",
             maxAttemptsExpression = "${app.stripe.retry.max-attempts}",
             backoff = @Backoff(
                     delayExpression = "${app.stripe.retry.initial-interval-ms}",

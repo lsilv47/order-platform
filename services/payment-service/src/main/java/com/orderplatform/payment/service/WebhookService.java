@@ -51,15 +51,17 @@ public class WebhookService {
         String eventType = event.getType();
         log.info("Processing webhook event {} type {}", event.getId(), eventType);
 
+        // Insert before business logic; UNIQUE constraint on stripe_event_id
+        // prevents concurrent duplicate processing (transaction rolls back on conflict)
+        processedWebhookEventRepository.saveAndFlush(
+                new ProcessedWebhookEvent(UUID.randomUUID(), event.getId(), eventType)
+        );
+
         switch (eventType) {
             case "payment_intent.succeeded" -> handlePaymentIntentSucceeded(event);
             case "payment_intent.payment_failed" -> handlePaymentIntentFailed(event);
             default -> log.info("Unhandled event type: {}", eventType);
         }
-
-        processedWebhookEventRepository.save(
-                new ProcessedWebhookEvent(UUID.randomUUID(), event.getId(), eventType)
-        );
     }
 
     private void handlePaymentIntentSucceeded(Event event) {

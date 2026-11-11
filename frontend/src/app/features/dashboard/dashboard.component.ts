@@ -39,7 +39,12 @@ export class DashboardComponent {
     // shortcut: revenue sums only first 100 orders, upgrade with a dedicated API endpoint when needed
     revenuePage: this.orderService
       .getOrders({ status: 'PAID', page: 0, size: 100 })
-      .pipe(catchError(() => of(EMPTY_PAGE)))
+      .pipe(
+        catchError((err) => {
+          console.error('Failed to load revenue data', err);
+          return of(EMPTY_PAGE);
+        })
+      )
   }).pipe(
     map(({ PENDING, PAID, PAYMENT_FAILED, CANCELLED, revenuePage }) => ({
       tiles: [
@@ -61,7 +66,10 @@ export class DashboardComponent {
       .getOrders({ status, page: 0, size: 1 })
       .pipe(
         map((page) => page.totalElements),
-        catchError(() => of(0))
+        catchError((err) => {
+          console.error(`Failed to load count for status ${status}`, err);
+          return of(0);
+        })
       );
   }
 }

@@ -1,8 +1,10 @@
 <mat-toolbar color="primary">
   <span>Order Platform</span>
 </mat-toolbar>
-<nav mat-tab-nav-bar>
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
   <a mat-tab-link routerLink="/orders" routerLinkActive #ordersLink="routerLinkActive" [active]="ordersLink.isActive">Pedidos</a>
   <a mat-tab-link routerLink="/dashboard" routerLinkActive #dashLink="routerLinkActive" [active]="dashLink.isActive">Dashboard</a>
 </nav>
-<router-outlet />
+<mat-tab-nav-panel #tabPanel>
+  <router-outlet />
+</mat-tab-nav-panel>

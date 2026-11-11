@@ -35,8 +35,20 @@ export class OrderDetailComponent {
   readonly displayedColumns = ['productName', 'quantity', 'unitPrice', 'subtotal'];
 
   readonly vm$ = forkJoin([
-    this.orderService.getOrder(this.id).pipe(catchError(() => of(null))),
-    this.paymentService.getPayment(this.id).pipe(catchError(() => of(null)))
+    this.orderService.getOrder(this.id).pipe(
+      catchError((err) => {
+        console.error('Failed to load order', err);
+        return of(null);
+      })
+    ),
+    // A 404 here means "no payment yet" (intentional, not an error), but other
+    // failures (network, 5xx) are still worth a log.
+    this.paymentService.getPayment(this.id).pipe(
+      catchError((err) => {
+        console.error('Failed to load payment', err);
+        return of(null);
+      })
+    )
   ]).pipe(
     map(([order, payment]) => ({
       order,

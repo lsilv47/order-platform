@@ -1,6 +1,5 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatInputModule } from '@angular/material/input';
@@ -8,8 +7,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
-import { Observable, of } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Observable, Subject, combineLatest, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, startWith, switchMap } from 'rxjs/operators';
 import { OrderStatus, OrderSummary } from '../../../core/models/order.model';
 import { OrderService, Page } from '../../../core/services/order.service';
 
@@ -43,19 +42,31 @@ export class OrderListComponent {
   readonly statusControl = new FormControl<OrderStatus | ''>('');
   readonly emailControl = new FormControl('');
 
-  private pageIndex = 0;
-  orders$: Observable<Page<OrderSummary>> = this.fetch();
+  // Paginator clicks feed this subject instead of reassigning a field, so a single
+  // long-lived observable (below) drives the table purely via the `| async` pipe.
+  // That keeps this zoneless-safe: no manual field reassignment from an async callback.
+  private readonly pageRequest$ = new Subject<number>();
 
-  constructor() {
-    this.statusControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.onFilterChange());
-    this.emailControl.valueChanges
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe(() => this.onFilterChange());
-  }
+  readonly orders$: Observable<Page<OrderSummary>> = combineLatest([
+    this.statusControl.valueChanges.pipe(startWith(this.statusControl.value)),
+    this.emailControl.valueChanges.pipe(
+      startWith(this.emailControl.value),
+      debounceTime(300),
+      distinctUntilChanged()
+    )
+  ]).pipe(
+    // Any filter change restarts the page-request stream at page 0, naturally
+    // resetting pagination without a separate reset mechanism.
+    switchMap(([status, email]) =>
+      this.pageRequest$.pipe(
+        startWith(0),
+        switchMap((page) => this.fetch(status, email, page))
+      )
+    )
+  );
 
   onPage(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.orders$ = this.fetch();
+    this.pageRequest$.next(event.pageIndex);
   }
 
   onRowClick(order: OrderSummary): void {
@@ -66,19 +77,19 @@ export class OrderListComponent {
     return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  private onFilterChange(): void {
-    this.pageIndex = 0;
-    this.orders$ = this.fetch();
-  }
-
-  private fetch(): Observable<Page<OrderSummary>> {
+  private fetch(status: OrderStatus | '' | null, email: string | null, page: number): Observable<Page<OrderSummary>> {
     return this.orderService
       .getOrders({
-        status: this.statusControl.value || undefined,
-        customerEmail: this.emailControl.value || undefined,
-        page: this.pageIndex,
+        status: status || undefined,
+        customerEmail: email || undefined,
+        page,
         size: this.pageSize
       })
-      .pipe(catchError(() => of(EMPTY_PAGE)));
+      .pipe(
+        catchError((err) => {
+          console.error('Failed to load orders', err);
+          return of(EMPTY_PAGE);
+        })
+      );
   }
 }

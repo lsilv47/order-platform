@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public record OrderItemRequest(
         @NotNull UUID productId,
-        @Min(1) Integer quantity
+        @NotNull @Min(1) Integer quantity
 ) {}

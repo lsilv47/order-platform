@@ -77,6 +77,7 @@ public class OrderService {
         return toResponse(orderRepository.save(order));
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderSummaryResponse> findAll(OrderStatus status, String customerEmail, Pageable pageable) {
         Page<Order> page;
         if (status != null && customerEmail != null) {
@@ -91,6 +92,7 @@ public class OrderService {
         return page.map(this::toSummary);
     }
 
+    @Transactional(readOnly = true)
     public OrderResponse findById(UUID id) {
         Order order = orderRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
@@ -131,7 +133,7 @@ public class OrderService {
     private void restoreStock(Order order) {
         Instant now = Instant.now();
         for (OrderItem item : order.getItems()) {
-            productRepository.findById(item.getProductId()).ifPresent(product -> {
+            productRepository.findByIdForUpdate(item.getProductId()).ifPresent(product -> {
                 product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
                 product.setUpdatedAt(now);
                 productRepository.save(product);

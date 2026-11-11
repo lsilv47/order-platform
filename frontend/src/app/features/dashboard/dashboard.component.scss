@@ -1,0 +1,27 @@
+.dashboard {
+  padding: 1rem;
+}
+
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tile {
+  min-width: 180px;
+  flex: 1 1 180px;
+}
+
+.tile-count {
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.tile-label {
+  opacity: 0.6;
+}
+
+.revenue .tile-count {
+  font-size: 1.5rem;
+}

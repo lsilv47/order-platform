@@ -12,6 +12,7 @@ import com.orderplatform.order.dto.response.OrderSummaryResponse;
 import com.orderplatform.order.exception.InsufficientStockException;
 import com.orderplatform.order.exception.InvalidOrderStateException;
 import com.orderplatform.order.exception.ResourceNotFoundException;
+import com.orderplatform.order.messaging.publisher.OrderEventPublisher;
 import com.orderplatform.order.repository.OrderRepository;
 import com.orderplatform.order.repository.ProductRepository;
 import org.springframework.data.domain.Page;
@@ -29,10 +30,13 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final OrderEventPublisher orderEventPublisher;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
+                        OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     @Transactional
@@ -74,7 +78,9 @@ public class OrderService {
         }
 
         order.setTotalAmount(total);
-        return toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventPublisher.publishOrderCreated(saved, order.getCorrelationId());
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
